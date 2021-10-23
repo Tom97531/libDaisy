@@ -44,6 +44,7 @@ void UI::Process()
     {
         while(!eventQueue_->IsQueueEmpty())
         {
+            lastEventTime_ = System::GetNow();
             UiEventQueue::Event e = eventQueue_->GetAndRemoveNextEvent();
             if(e.type != UiEventQueue::Event::EventType::invalid)
                 ProcessEvent(e);
@@ -58,11 +59,21 @@ void UI::Process()
 
     // redraw canvases
     const auto currentTimeInMs = System::GetNow();
-    for(uint32_t i = 0; i < canvases_.GetNumElements(); i++)
+    if(currentTimeInMs - lastEventTime_ > screenSaverTimeOut)
     {
-        const uint32_t timeDiff = currentTimeInMs - lastUpdateTimes_[i];
-        if(timeDiff > canvases_[i].updateRateMs_)
-            RedrawCanvas(i, currentTimeInMs);
+        for(uint32_t i = 0; i < canvases_.GetNumElements(); i++)
+        {
+            canvases_[i].clearFunction_(canvases_[i]);
+        }
+    }
+    else
+    {
+        for(uint32_t i = 0; i < canvases_.GetNumElements(); i++)
+        {
+            const uint32_t timeDiff = currentTimeInMs - lastUpdateTimes_[i];
+            if(timeDiff > canvases_[i].updateRateMs_)
+                RedrawCanvas(i, currentTimeInMs);
+        }
     }
 }
 
